@@ -1,62 +1,75 @@
 const myMap = L.map("map").setView([22.9074872, 79.07306671], 5);
 const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-
 const attribution =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Coded by jewells❤️';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Coded by jewells ❤️';
 const tileLayer = L.tileLayer(tileUrl, { attribution });
 tileLayer.addTo(myMap);
 
-// const CLayer = L.circle([22.9074872, 79.07306671], {
-//   radius: 200000,
-//   color: "coral",
-//   fillColor: "green",
-//   fillOpacity: 0.5,
-// });
+function generateList() {
+  const ul = document.querySelector(".list");
+  storeList.forEach((shop) => {
+    const li = document.createElement("li");
+    const div = document.createElement("div");
+    const a = document.createElement("a");
+    const p = document.createElement("p");
+    a.addEventListener("click", () => {
+      flyToStore(shop);
+    });
+    div.classList.add("shop-item");
+    a.innerText = shop.properties.name;
+    a.href = "#";
+    p.innerText = shop.properties.address;
 
-const CLayer = L.circle([22.9074872, 79.07306671], {
-  radius: 20000,
-  color: "coral",
+    div.appendChild(a);
+    div.appendChild(p);
+    li.appendChild(div);
+    ul.appendChild(li);
+  });
+}
+
+generateList();
+
+function makePopupContent(shop) {
+  return `
+    <div>
+        <h4>${shop.properties.name}</h4>
+        <p>${shop.properties.address}</p>
+        <div class="phone-number">
+            <a href="tel:${shop.properties.phone}">${shop.properties.phone}</a>
+        </div>
+    </div>
+  `;
+}
+function onEachFeature(feature, layer) {
+  layer.bindPopup(makePopupContent(feature), {
+    closeButton: false,
+    offset: L.point(0, -8),
+  });
+}
+
+var myIcon = L.icon({
+  iconUrl: "marker.png",
+  iconSize: [30, 40],
 });
 
-CLayer.addTo(myMap);
-
-const bounds = [
-  [54.559322, -5.767822],
-  [56.1210604, -3.02124],
-];
-const rectangle = L.rectangle(bounds);
-rectangle.addTo(myMap);
-
-var bTriangleCoors = [
-  [25.774, -80.19],
-  [18.466, -66.118],
-  [32.321, -64.757],
-];
-const polygon = L.polygon(bTriangleCoors);
-polygon.addTo(myMap);
-
-const latlngs = [
-  [45.51, -122.68],
-  [37.77, -122.43],
-  [34.04, -118.2],
-];
-const polyline = L.polyline(latlngs, { color: "red" });
-polyline.addTo(myMap);
-
-// const cMarker = L.circleMarker([18.920675417289807, 72.82952788802635], {
-//   radius: 40,
-//   color: "coral",
-// });
-// cMarker.addTo(myMap);
-
-const icon = L.icon({
-  iconUrl: "./marker.png",
-  iconSize: [60, 80],
+const shopsLayer = L.geoJSON(storeList, {
+  onEachFeature: onEachFeature,
+  pointToLayer: function (feature, latlng) {
+    return L.marker(latlng, { icon: myIcon });
+  },
 });
-const marker = L.marker([18.920675417289807, 72.82952788802635], { icon });
-marker.bindPopup("<h2>Marker Outlet</h2>");
-marker.addTo(myMap);
+shopsLayer.addTo(myMap);
 
-const marker2 = L.marker([28.539914829877652, 77.27116736919079], { icon });
-marker2.bindPopup("<h2>Marker2 Outlet</h2>");
-marker2.addTo(myMap);
+function flyToStore(store) {
+  const lat = store.geometry.coordinates[1];
+  const lng = store.geometry.coordinates[0];
+  myMap.flyTo([lat, lng], 14, {
+    duration: 3,
+  });
+  setTimeout(() => {
+    L.popup({ closeButton: false, offset: L.point(0, -8) })
+      .setLatLng([lat, lng])
+      .setContent(makePopupContent(store))
+      .openOn(myMap);
+  }, 3000);
+}
